@@ -1,0 +1,8 @@
+CREATE TABLE tb_users (
+    id UUID PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    strava_token VARCHAR(255) UNIQUE
+);
