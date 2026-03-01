@@ -53,6 +53,10 @@ public final class Password {
         return Result.success(new Password(value));
     }
 
+    public static Password restore(String value) {
+        return new Password(value);
+    }
+
     public String getValue() {
         return value;
     }

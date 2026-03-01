@@ -24,6 +24,10 @@ public final class Email {
         return Result.success(new Email(value));
     }
 
+    public static Email restore(String email) {
+        return new Email(email);
+    }
+
     public String getValue() {
         return value;
     }
