@@ -22,8 +22,14 @@ public class UserJpaEntity {
     @Column(nullable = false, name = "email", unique = true)
     private String email;
 
-    @Column(name = "strava_token", unique = true)
-    private String stravaToken;
+    @Column(name = "strava_acess_token", unique = true)
+    private String stravaTokenAcessToken;
+
+    @Column(name = "strava_refresh_token", unique = true)
+    private String stravaRefreshToken;
+
+    @Column(name = "strava_expires_at")
+    private Long strava_expires_at;
 
     @Column(nullable = false, name = "created_at")
     @CreatedDate
@@ -32,5 +38,41 @@ public class UserJpaEntity {
     protected UserJpaEntity() {
     }
 
+    public UserJpaEntity(UUID id, String name, String password, String email, String stravaTokenAcessToken, String stravaRefreshToken, long strava_expires_at) {
+        this.id = id;
+        this.name = name;
+        this.password = password;
+        this.email = email;
+        this.stravaTokenAcessToken = stravaTokenAcessToken;
+        this.stravaRefreshToken = stravaRefreshToken;
+        this.strava_expires_at = strava_expires_at;
+    }
 
+    public UUID getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getStravaTokenAcessToken() {
+        return stravaTokenAcessToken;
+    }
+
+    public String getStravaRefreshToken() {
+        return stravaRefreshToken;
+    }
+
+    public long getStrava_expires_at() {
+        return strava_expires_at;
+    }
 }
