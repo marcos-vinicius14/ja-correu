@@ -1,4 +1,4 @@
-package org.jacorreu.user.infraestructure.persistence.entity;
+package org.jacorreu.user.infra.persistence.entity;
 
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;

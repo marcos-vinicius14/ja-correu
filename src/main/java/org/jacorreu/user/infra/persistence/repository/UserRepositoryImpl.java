@@ -1,10 +1,10 @@
-package org.jacorreu.user.infraestructure.persistence.repository;
+package org.jacorreu.user.infra.persistence.repository;
 
 import org.jacorreu.user.core.domain.UserDomain;
 import org.jacorreu.user.core.domain.valueobjects.Email;
 import org.jacorreu.user.gateway.UserRepository;
-import org.jacorreu.user.infraestructure.persistence.entity.UserJpaEntity;
-import org.jacorreu.user.infraestructure.persistence.mapper.UserMapper;
+import org.jacorreu.user.infra.persistence.entity.UserJpaEntity;
+import org.jacorreu.user.infra.persistence.mapper.UserMapper;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;

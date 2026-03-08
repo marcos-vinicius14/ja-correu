@@ -1,8 +1,8 @@
-package org.jacorreu.user.infraestructure.persistence.mapper;
+package org.jacorreu.user.infra.persistence.mapper;
 
 import org.jacorreu.user.core.domain.UserDomain;
 import org.jacorreu.user.core.domain.valueobjects.ValidStravaToken;
-import org.jacorreu.user.infraestructure.persistence.entity.UserJpaEntity;
+import org.jacorreu.user.infra.persistence.entity.UserJpaEntity;
 import org.springframework.stereotype.Component;
 
 @Component

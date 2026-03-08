@@ -16,7 +16,7 @@ public final class UserDomain {
 
 
     public UserDomain(String name, Email email, Password password) {
-        this.id = Generators.timeBasedGenerator().generate();
+        this.id = Generators.timeBasedEpochGenerator().generate();
         this.name = name;
         this.email = email;
         this.password = password;
