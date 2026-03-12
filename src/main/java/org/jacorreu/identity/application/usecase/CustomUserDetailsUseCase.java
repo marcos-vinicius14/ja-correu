@@ -2,7 +2,7 @@ package org.jacorreu.identity.application.usecase;
 
 import org.jacorreu.user.core.domain.UserDomain;
 import org.jacorreu.user.core.domain.valueobjects.Email;
-import org.jacorreu.user.gateway.UserRepository;
+import org.jacorreu.user.core.gateway.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

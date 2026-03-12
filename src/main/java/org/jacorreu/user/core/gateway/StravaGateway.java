@@ -1,4 +1,4 @@
-package org.jacorreu.user.gateway;
+package org.jacorreu.user.core.gateway;
 
 import org.jacorreu.user.core.domain.valueobjects.StravaToken;
 

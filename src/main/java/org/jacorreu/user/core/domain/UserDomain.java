@@ -2,7 +2,7 @@ package org.jacorreu.user.core.domain;
 
 import com.fasterxml.uuid.Generators;
 import org.jacorreu.user.core.domain.valueobjects.*;
-import org.jacorreu.user.gateway.StravaGateway;
+import org.jacorreu.user.core.gateway.StravaGateway;
 
 import java.util.Objects;
 import java.util.UUID;

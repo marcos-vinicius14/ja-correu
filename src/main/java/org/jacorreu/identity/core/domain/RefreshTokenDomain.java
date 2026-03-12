@@ -65,5 +65,7 @@ public final class RefreshTokenDomain {
         return token;
     }
 
-
+    public UUID getTokenId() {
+        return tokenId;
+    }
 }

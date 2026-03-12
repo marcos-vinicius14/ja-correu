@@ -6,6 +6,6 @@ CREATE TABLE tb_refresh_token (
     user_id UUID NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES tb_users(id)
-
-
 );
+
+CREATE INDEX idx_refresh_token_token ON tb_refresh_token USING btree (token);
