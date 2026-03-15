@@ -25,7 +25,7 @@ public final class Email {
     }
 
     public static Email restore(String email) {
-        return new Email(email);
+        return new Email(email.trim());
     }
 
     public String getValue() {

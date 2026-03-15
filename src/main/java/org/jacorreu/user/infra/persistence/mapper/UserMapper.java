@@ -13,8 +13,8 @@ public class UserMapper {
                 jpaEntity.getName(),
                 jpaEntity.getEmail(),
                 jpaEntity.getPassword(),
-                jpaEntity.getStravaRefreshToken(),
-                jpaEntity.getStravaTokenAcessToken(),
+                jpaEntity.getStravaTokenAcessToken(),  // accessToken primeiro
+                jpaEntity.getStravaRefreshToken(),     // refreshToken depois
                 jpaEntity.getStrava_expires_at()
         );
     }
@@ -33,8 +33,8 @@ public class UserMapper {
         return new UserJpaEntity(
                 domain.getId(),
                 domain.getName(),
-                domain.getEmail().getValue(),
                 domain.getPassword().getValue(),
+                domain.getEmail().getValue(),
                 stravaAccessToken,
                 stravaRefreshToken,
                 stravaExpiresAt

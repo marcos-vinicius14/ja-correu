@@ -3,7 +3,7 @@ package org.jacorreu.identity.application.usecase;
 import jakarta.persistence.EntityNotFoundException;
 import org.jacorreu.identity.core.domain.RefreshTokenDomain;
 import org.jacorreu.identity.core.gateway.RefreshTokenRepository;
-import org.jacorreu.identity.infra.dto.TokenPair;
+import org.jacorreu.identity.application.dto.response.TokenResponse;
 import org.jacorreu.shared.validation.Notification;
 import org.jacorreu.shared.validation.Result;
 import org.jacorreu.user.core.domain.UserDomain;
@@ -28,7 +28,7 @@ public final class RenewTokenUseCase {
         this.issueTokenUseCase = issueTokenUseCase;
     }
 
-    public Result<TokenPair> execute(UUID token) {
+    public Result<TokenResponse> execute(UUID token) {
         Notification notification = new Notification();
         RefreshTokenDomain tokenDomain = repository.findByTokenId(token).orElseThrow(() -> new EntityNotFoundException("Token nao encontrado"));
 

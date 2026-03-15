@@ -14,12 +14,16 @@ public final class Result<T> {
         return new Result<>(data, null);
     }
 
+    public static Result<Void> success() {
+        return new Result<>(null, null);
+    }
+
     public static <T> Result<T> failure(Notification notification) {
         return new Result<>(null, notification);
     }
 
-    public boolean isSucess() {
-        return !notification.hasErrors();
+    public boolean isSuccess() {
+        return notification == null || !notification.hasErrors();
     }
 
     public T getData() {

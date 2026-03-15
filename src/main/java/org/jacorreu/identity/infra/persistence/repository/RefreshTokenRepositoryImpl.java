@@ -36,4 +36,9 @@ public class RefreshTokenRepositoryImpl implements RefreshTokenRepository {
     public void revoke(UUID tokenId) {
         repository.revokeToken(tokenId);
     }
+
+    @Override
+    public void revokeAllByUserId(UUID userId) {
+        repository.revokeAllByUserId(userId);
+    }
 }

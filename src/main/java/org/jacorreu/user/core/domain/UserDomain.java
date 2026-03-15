@@ -15,7 +15,7 @@ public final class UserDomain {
     private final StravaToken stravaToken;
 
 
-    public UserDomain(String name, Email email, Password password) {
+    private UserDomain(String name, Email email, Password password) {
         this.id = Generators.timeBasedEpochGenerator().generate();
         this.name = name;
         this.email = email;
@@ -33,6 +33,13 @@ public final class UserDomain {
     }
 
 
+    public static UserDomain create(
+            String username,
+            Email email,
+            Password password
+    ) {
+        return new UserDomain(username, email, password);
+    }
     public static UserDomain restore(
             UUID id,
             String name,

@@ -9,4 +9,5 @@ public interface RefreshTokenRepository {
     void save(RefreshTokenDomain domain);
     Optional<RefreshTokenDomain> findByTokenId(UUID tokenId);
     void revoke(UUID tokenId);
+    void revokeAllByUserId(UUID userId);
 }

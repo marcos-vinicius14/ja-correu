@@ -1,11 +1,8 @@
 package org.jacorreu.identity.application.usecase;
 
-import org.jacorreu.identity.application.dto.LoginRequest;
-import org.jacorreu.identity.core.domain.RefreshTokenDomain;
-import org.jacorreu.identity.core.gateway.JwtGateway;
+import org.jacorreu.identity.application.dto.request.LoginRequest;
 import org.jacorreu.identity.core.gateway.PasswordEncoderGateway;
-import org.jacorreu.identity.core.gateway.RefreshTokenRepository;
-import org.jacorreu.identity.infra.dto.TokenPair;
+import org.jacorreu.identity.application.dto.response.TokenResponse;
 import org.jacorreu.shared.validation.Notification;
 import org.jacorreu.shared.validation.Result;
 import org.jacorreu.user.core.domain.UserDomain;
@@ -27,7 +24,7 @@ public final class LoginUseCase {
         this.issueTokenUseCase = issueTokenUseCase;
     }
 
-    public Result<TokenPair> execute(LoginRequest request) {
+    public Result<TokenResponse> execute(LoginRequest request) {
         Notification notification = new Notification();
         Email email = Email.restore(request.email());
         Password password = Password.restore(request.password());

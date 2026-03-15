@@ -10,7 +10,6 @@ import java.util.UUID;
 @Table(name = "tb_users")
 public class UserJpaEntity {
     @Id
-    @GeneratedValue
     private UUID id;
 
     @Column(nullable = false, name = "username")
@@ -38,7 +37,15 @@ public class UserJpaEntity {
     protected UserJpaEntity() {
     }
 
-    public UserJpaEntity(UUID id, String name, String password, String email, String stravaTokenAcessToken, String stravaRefreshToken, long strava_expires_at) {
+    public UserJpaEntity(
+            UUID id,
+            String name,
+            String password,
+            String email,
+            String stravaTokenAcessToken,
+            String stravaRefreshToken,
+            Long strava_expires_at
+    ) {
         this.id = id;
         this.name = name;
         this.password = password;
@@ -46,6 +53,7 @@ public class UserJpaEntity {
         this.stravaTokenAcessToken = stravaTokenAcessToken;
         this.stravaRefreshToken = stravaRefreshToken;
         this.strava_expires_at = strava_expires_at;
+        this.createdAt = Instant.now();
     }
 
     public UUID getId() {
@@ -72,7 +80,7 @@ public class UserJpaEntity {
         return stravaRefreshToken;
     }
 
-    public long getStrava_expires_at() {
+    public Long getStrava_expires_at() {
         return strava_expires_at;
     }
 }
