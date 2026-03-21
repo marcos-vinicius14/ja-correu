@@ -46,6 +46,22 @@ jwt:
 
 logging:
   level:
-    org.jacorreu: DEBUG
-    org.springframework.security: DEBUG
+    io.micrometer: DEBUG
+    io.opentelemetry: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus, health, conditions
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+  tracing:
+    sampling:
+      probability: 1.0
+    observation:
+      enabled: true
+
+
 
