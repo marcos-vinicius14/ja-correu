@@ -33,14 +33,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
 
         log.debug("Requisição recebida: {}", request.getRequestURI());
         log.debug("Auth header presente: {}", authHeader != null);
-
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -53,14 +52,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             UUID userId = jwt.extractUserId(token);
             UserDetails userDetails = userDetailsService.loadUserById(userId);
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails,
+                    null, userDetails.getAuthorities());
 
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (Exception e) {
-            log.debug(STR."[JwtAuthFilter] \{e.getMessage()}");
+            log.debug("[JwtAuthFilter] {}", e.getMessage());
         }
 
         filterChain.doFilter(request, response);
