@@ -44,7 +44,7 @@ public class RefreshTokenDomainTest {
 
     RefreshTokenDomain refreshToken = RefreshTokenDomain.create(token, expirationDate, userId);
 
-    assertNotNull(refreshToken.getTokenId(),  
+    assertNotNull(refreshToken.getTokenId());
     assertEquals(userId, refreshToken.getUserId());
     assertEquals(expirationDate, refreshToken.getExpirationDate());
     assertEquals(false, refreshToken.isRevoked());
