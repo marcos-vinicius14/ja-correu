@@ -1,0 +1,41 @@
+<div class="min-h-screen bg-gray-50">
+  <nav class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <h1 class="text-xl font-bold text-gray-900">{{ title() }}</h1>
+        </div>
+        <div class="flex items-center">
+          <a href="http://localhost:3001" target="_blank" class="text-gray-500 hover:text-gray-700">
+            Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="py-10">
+    <header>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold leading-tight text-gray-900">Bem-vindo ao Ja Correu</h1>
+      </div>
+    </header>
+    <main>
+      <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="px-4 py-8 sm:px-0">
+          <div class="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
+            <div class="text-center">
+              <p class="text-gray-500">Angular + Spring Boot monorepo está funcionando!</p>
+              <p class="mt-2 text-sm text-gray-400">
+                Frontend em <a href="http://localhost:4200" class="text-blue-500">localhost:4200</a><br>
+                Backend API em <a href="http://localhost:8080" class="text-blue-500">localhost:8080</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<router-outlet />
