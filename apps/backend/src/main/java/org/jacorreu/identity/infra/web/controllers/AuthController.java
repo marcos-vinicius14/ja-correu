@@ -8,7 +8,6 @@ import org.jacorreu.identity.application.usecase.LoginUseCase;
 import org.jacorreu.identity.application.usecase.LogoutUseCase;
 import org.jacorreu.identity.application.usecase.RenewTokenUseCase;
 import org.jacorreu.identity.core.gateway.JwtGateway;
-import org.jacorreu.identity.infra.security.JwtAuthFilter;
 import org.jacorreu.identity.infra.web.dto.ErrorResponse;
 import org.jacorreu.shared.validation.Result;
 import org.slf4j.Logger;
@@ -20,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -28,6 +26,7 @@ import java.util.UUID;
 public class AuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+    private static final Duration ACCESS_TOKEN_TTL = Duration.ofHours(10);
     private static final Duration REFRESH_TOKEN_TTL = Duration.ofDays(7);
 
     private final RenewTokenUseCase renewTokenUseCase;
@@ -37,10 +36,10 @@ public class AuthController {
     private final JwtGateway jwt;
 
     public AuthController(RenewTokenUseCase renewTokenUseCase,
-                          LoginUseCase loginUseCase,
-                          LogoutUseCase logoutUseCase,
-                          CreateUserUseCase createUserUseCase,
-                          JwtGateway jwt) {
+            LoginUseCase loginUseCase,
+            LogoutUseCase logoutUseCase,
+            CreateUserUseCase createUserUseCase,
+            JwtGateway jwt) {
         this.renewTokenUseCase = renewTokenUseCase;
         this.loginUseCase = loginUseCase;
         this.logoutUseCase = logoutUseCase;
@@ -48,13 +47,13 @@ public class AuthController {
         this.jwt = jwt;
     }
 
-
     @PostMapping("/register")
     public ResponseEntity<?> create(@RequestBody CreateUserRequest request) {
         Result<Void> result = createUserUseCase.execute(request);
 
         if (!result.isSuccess()) {
-            return errorResponse(HttpStatus.BAD_REQUEST, "Erro ao criar usuário", result, "Verifique se os dados estão corretos e tente novamente");
+            return errorResponse(HttpStatus.BAD_REQUEST, "Erro ao criar usuário", result,
+                    "Verifique se os dados estão corretos e tente novamente");
         }
 
         return ResponseEntity.status(201).build();
@@ -62,40 +61,39 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        Result<TokenResponse> result = loginUseCase.execute(request);
-
         log.debug("Login endpoint chamado para email: {}", request.email());
-        log.debug("Login endpoint chamado");
+
+        Result<TokenResponse> result = loginUseCase.execute(request);
 
         log.debug("Login result success: {}", result.isSuccess());
         if (!result.isSuccess()) {
             log.debug("Login errors: {}", result.getNotification().getErrors());
-
-            return errorResponse(HttpStatus.UNAUTHORIZED, "Erro ao realizar login", result, "Verifique se os dados estão corretos e tente novamente");
+            return errorResponse(HttpStatus.UNAUTHORIZED, "Erro ao realizar login", result,
+                    "Verifique se os dados estão corretos e tente novamente");
         }
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(result.getData().refreshToken(), REFRESH_TOKEN_TTL).toString())
-                .body(Map.of("accessToken", result.getData().accessToken()));
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE,
+                        buildCookie("access_token", result.getData().accessToken(), ACCESS_TOKEN_TTL).toString())
+                .header(HttpHeaders.SET_COOKIE,
+                        buildCookie("refresh_token", result.getData().refreshToken(), REFRESH_TOKEN_TTL).toString())
+                .build();
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader) {
-        String token = extractBearerToken(authHeader);
-
-        if (token == null) {
-            return errorResponse(HttpStatus.BAD_REQUEST, "Token inválido", "Header Authorization ausente ou mal formatado", "Envie o header no formato: Bearer <token>");
-        }
-
-        try {
-            UUID userId = jwt.extractUserId(token);
-            logoutUseCase.execute(userId);
-        } catch (Exception e) {
-            return errorResponse(HttpStatus.UNAUTHORIZED, "Token inválido", e.getMessage(), "Realize o login novamente");
+    public ResponseEntity<?> logout(@CookieValue(value = "access_token", required = false) String accessToken) {
+        if (accessToken != null) {
+            try {
+                UUID userId = jwt.extractUserId(accessToken);
+                logoutUseCase.execute(userId);
+            } catch (Exception e) {
+                log.debug("[logout] token inválido: {}", e.getMessage());
+            }
         }
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie("", Duration.ZERO).toString())
+                .header(HttpHeaders.SET_COOKIE, buildCookie("access_token", "", Duration.ZERO).toString())
+                .header(HttpHeaders.SET_COOKIE, buildCookie("refresh_token", "", Duration.ZERO).toString())
                 .build();
     }
 
@@ -104,19 +102,28 @@ public class AuthController {
         Result<TokenResponse> result = renewTokenUseCase.execute(UUID.fromString(refreshToken));
 
         if (!result.isSuccess()) {
-            log.debug("Login errors: {}", result.getNotification().getErrors());
-            return errorResponse(HttpStatus.UNAUTHORIZED, "Erro ao renovar credenciais", result, "Realize o login novamente");
+            log.debug("Refresh errors: {}", result.getNotification().getErrors());
+            return errorResponse(HttpStatus.UNAUTHORIZED, "Erro ao renovar credenciais", result,
+                    "Realize o login novamente");
         }
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(result.getData().refreshToken(), REFRESH_TOKEN_TTL).toString())
-                .body(Map.of("accessToken", result.getData().accessToken()));
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE,
+                        buildCookie("access_token", result.getData().accessToken(), ACCESS_TOKEN_TTL).toString())
+                .header(HttpHeaders.SET_COOKIE,
+                        buildCookie("refresh_token", result.getData().refreshToken(), REFRESH_TOKEN_TTL).toString())
+                .build();
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<?> status() {
+        return ResponseEntity.ok().build();
     }
 
     // ─── Helpers ─────────────────────────────────────────────
 
-    private ResponseCookie buildRefreshCookie(String value, Duration maxAge) {
-        return ResponseCookie.from("refresh_token", value)
+    private ResponseCookie buildCookie(String name, String value, Duration maxAge) {
+        return ResponseCookie.from(name, value)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -135,12 +142,5 @@ public class AuthController {
 
     private ResponseEntity<?> errorResponse(HttpStatus status, String title, String detail, String hint) {
         return ResponseEntity.status(status).body(new ErrorResponse(title, detail, hint));
-    }
-
-    private String extractBearerToken(String authHeader) {
-        if (authHeader == null || !authHeader.toLowerCase().startsWith("bearer ")) {
-            return null;
-        }
-        return authHeader.substring(7).trim();
     }
 }
