@@ -78,12 +78,15 @@ class RenewTokenUseCaseTest {
     }
 
     @Test
-    void execute_tokenNotFound_throwsEntityNotFoundException() {
+    void execute_tokenNotFound_returnsFailure() {
         UUID tokenId = UUID.randomUUID();
 
         when(refreshTokenRepository.findByTokenId(tokenId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> renewTokenUseCase.execute(tokenId));
+        Result<TokenResponse> result = renewTokenUseCase.execute(tokenId);
+
+        assertFalse(result.isSuccess());
+        assertEquals("Token nao encontrado", result.getNotification().getErrors().getFirst().message());
         verify(refreshTokenRepository, never()).revoke(any());
         verify(issueTokenUseCase, never()).execute(any());
     }
@@ -121,7 +124,7 @@ class RenewTokenUseCaseTest {
     }
 
     @Test
-    void execute_userNotFound_throwsEntityNotFoundException() {
+    void execute_userNotFound_returnsFailure() {
         UUID tokenId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
 
@@ -129,7 +132,10 @@ class RenewTokenUseCaseTest {
                 .thenReturn(Optional.of(buildValidToken(tokenId, userId)));
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> renewTokenUseCase.execute(tokenId));
+        Result<TokenResponse> result = renewTokenUseCase.execute(tokenId);
+
+        assertFalse(result.isSuccess());
+        assertEquals("Usuario nao encontrado", result.getNotification().getErrors().getFirst().message());
         verify(refreshTokenRepository, times(1)).revoke(tokenId);
         verify(issueTokenUseCase, never()).execute(any());
     }
