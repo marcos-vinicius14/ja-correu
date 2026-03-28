@@ -1,6 +1,7 @@
 package org.jacorreu.user.infra.persistence.entity;
 
 import jakarta.persistence.*;
+import org.jacorreu.user.core.domain.UserStatus;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.Instant;
@@ -30,6 +31,10 @@ public class UserJpaEntity {
     @Column(name = "strava_expires_at")
     private Long strava_expires_at;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "status", columnDefinition = "user_status")
+    private UserStatus status;
+
     @Column(nullable = false, name = "created_at")
     @CreatedDate
     private Instant createdAt;
@@ -44,7 +49,8 @@ public class UserJpaEntity {
             String email,
             String stravaTokenAcessToken,
             String stravaRefreshToken,
-            Long strava_expires_at
+            Long strava_expires_at,
+            UserStatus status
     ) {
         this.id = id;
         this.name = name;
@@ -53,6 +59,7 @@ public class UserJpaEntity {
         this.stravaTokenAcessToken = stravaTokenAcessToken;
         this.stravaRefreshToken = stravaRefreshToken;
         this.strava_expires_at = strava_expires_at;
+        this.status = status;
         this.createdAt = Instant.now();
     }
 
@@ -82,5 +89,9 @@ public class UserJpaEntity {
 
     public Long getStrava_expires_at() {
         return strava_expires_at;
+    }
+
+    public UserStatus getStatus() {
+        return status;
     }
 }

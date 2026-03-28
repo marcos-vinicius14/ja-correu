@@ -13,6 +13,7 @@ public final class UserDomain {
     private final Email email;
     private final Password password;
     private final StravaToken stravaToken;
+    private final UserStatus status;
 
 
     private UserDomain(String name, Email email, Password password) {
@@ -21,15 +22,17 @@ public final class UserDomain {
         this.email = email;
         this.password = password;
         this.stravaToken = new EmptyStravaToken();
+        this.status = UserStatus.PENDING_ONBOARDING;
     }
 
 
-    private UserDomain(UUID id, String name, Email email, Password password, StravaToken stravaToken) {
+    private UserDomain(UUID id, String name, Email email, Password password, StravaToken stravaToken, UserStatus status) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.password = password;
         this.stravaToken = stravaToken;
+        this.status = status;
     }
 
 
@@ -40,6 +43,7 @@ public final class UserDomain {
     ) {
         return new UserDomain(username, email, password);
     }
+
     public static UserDomain restore(
             UUID id,
             String name,
@@ -48,14 +52,27 @@ public final class UserDomain {
             String stravaAccessToken,
             String stravaRefreshToken,
             Long stravaExpiresAt
+    ) {
+        return restore(id, name, emailStr, passwordStr, stravaAccessToken, stravaRefreshToken, stravaExpiresAt,
+                UserStatus.PENDING_ONBOARDING);
+    }
 
+    public static UserDomain restore(
+            UUID id,
+            String name,
+            String emailStr,
+            String passwordStr,
+            String stravaAccessToken,
+            String stravaRefreshToken,
+            Long stravaExpiresAt,
+            UserStatus status
     ) {
         Email restoredEmail = Email.restore(emailStr);
         Password restoredPassword = Password.restore(passwordStr);
 
 
         if (stravaAccessToken == null || stravaAccessToken.isBlank()) {
-            return new UserDomain(id, name, restoredEmail, restoredPassword, new EmptyStravaToken());
+            return new UserDomain(id, name, restoredEmail, restoredPassword, new EmptyStravaToken(), status);
         }
 
         StravaToken restoredToken = ValidStravaToken.restore(
@@ -64,7 +81,11 @@ public final class UserDomain {
                 stravaExpiresAt
         );
 
-        return new UserDomain(id, name, restoredEmail, restoredPassword, restoredToken);
+        return new UserDomain(id, name, restoredEmail, restoredPassword, restoredToken, status);
+    }
+
+    public UserDomain activate() {
+        return new UserDomain(this.id, this.name, this.email, this.password, this.stravaToken, UserStatus.ACTIVE);
     }
 
     public UserDomain linkStrava(StravaToken token) {
@@ -72,13 +93,13 @@ public final class UserDomain {
             throw new IllegalArgumentException("Token inválido para vincular Strava.");
         }
 
-        return new UserDomain(this.id, this.name, this.email, this.password, token);
+        return new UserDomain(this.id, this.name, this.email, this.password, token, this.status);
     }
 
     public UserDomain unlinkStrava(StravaGateway stravaGateway) {
         this.stravaToken.execute(stravaGateway::revokeAccess);
 
-        return new UserDomain(this.id, this.name, this.email, this.password, new EmptyStravaToken());
+        return new UserDomain(this.id, this.name, this.email, this.password, new EmptyStravaToken(), this.status);
     }
 
     public UserDomain syncStravaActivities(StravaGateway stravaGateway) {
@@ -112,6 +133,10 @@ public final class UserDomain {
 
     public StravaToken getStravaToken() {
         return stravaToken;
+    }
+
+    public UserStatus getStatus() {
+        return status;
     }
 
     @Override
