@@ -60,6 +60,6 @@ public class OnboardingController {
     private HttpStatus resolveHttpStatus(Result<AthleteProfileResult> result) {
         return result.getNotification().getErrors().stream()
                 .anyMatch(e -> "already_active".equals(e.field()))
-                ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+                ? HttpStatus.CONFLICT : HttpStatus.UNPROCESSABLE_ENTITY;
     }
 }
