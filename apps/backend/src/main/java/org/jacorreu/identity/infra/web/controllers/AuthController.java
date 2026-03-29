@@ -7,13 +7,12 @@ import org.jacorreu.identity.application.usecase.CreateUserUseCase;
 import org.jacorreu.identity.application.usecase.LoginUseCase;
 import org.jacorreu.identity.application.usecase.LogoutUseCase;
 import org.jacorreu.identity.application.usecase.RenewTokenUseCase;
-import org.jacorreu.identity.core.gateway.JwtGateway;
-import org.jacorreu.identity.infra.security.JwtAuthFilter;
 import org.jacorreu.identity.infra.web.dto.ErrorResponse;
 import org.jacorreu.shared.validation.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -34,18 +33,15 @@ public class AuthController {
     private final LoginUseCase loginUseCase;
     private final LogoutUseCase logoutUseCase;
     private final CreateUserUseCase createUserUseCase;
-    private final JwtGateway jwt;
 
     public AuthController(RenewTokenUseCase renewTokenUseCase,
                           LoginUseCase loginUseCase,
                           LogoutUseCase logoutUseCase,
-                          CreateUserUseCase createUserUseCase,
-                          JwtGateway jwt) {
+                          CreateUserUseCase createUserUseCase) {
         this.renewTokenUseCase = renewTokenUseCase;
         this.loginUseCase = loginUseCase;
         this.logoutUseCase = logoutUseCase;
         this.createUserUseCase = createUserUseCase;
-        this.jwt = jwt;
     }
 
 
@@ -80,19 +76,11 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader) {
-        String token = extractBearerToken(authHeader);
+    public ResponseEntity<?> logout() {
+        var userId = (UUID) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
 
-        if (token == null) {
-            return errorResponse(HttpStatus.BAD_REQUEST, "Token inválido", "Header Authorization ausente ou mal formatado", "Envie o header no formato: Bearer <token>");
-        }
-
-        try {
-            UUID userId = jwt.extractUserId(token);
-            logoutUseCase.execute(userId);
-        } catch (Exception e) {
-            return errorResponse(HttpStatus.UNAUTHORIZED, "Token inválido", e.getMessage(), "Realize o login novamente");
-        }
+        logoutUseCase.execute(userId);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie("", Duration.ZERO).toString())
@@ -137,10 +125,4 @@ public class AuthController {
         return ResponseEntity.status(status).body(new ErrorResponse(title, detail, hint));
     }
 
-    private String extractBearerToken(String authHeader) {
-        if (authHeader == null || !authHeader.toLowerCase().startsWith("bearer ")) {
-            return null;
-        }
-        return authHeader.substring(7).trim();
-    }
 }
