@@ -1,5 +1,7 @@
 package org.jacorreu.shared.validation;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public final class Result<T> {
     private final T data;
@@ -34,4 +36,27 @@ public final class Result<T> {
         return notification;
     }
 
+    public void onFailure(Consumer<Error> action) {
+        if (isFailure() && notification != null) {
+            notification.getErrors().forEach(action);
+        }
+    }
+
+    private boolean isFailure() {
+        return notification != null && notification.hasErrors();
+    }
+
+    public <R> Result<R> map(Function<T, R> mapper) {
+        if (isSuccess()) {
+            return Result.success(mapper.apply(data));
+        }
+        return Result.failure(notification);
+    }
+
+    public <R> Result<R> flatMap(Function<T, Result<R>> mapper) {
+        if (isSuccess()) {
+            return mapper.apply(data);
+        }
+        return Result.failure(notification);
+    }
 }
