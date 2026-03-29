@@ -10,9 +10,6 @@ import org.jacorreu.user.core.domain.valueobjects.Email;
 import org.jacorreu.user.core.domain.valueobjects.Password;
 import org.jacorreu.user.core.gateway.UserRepository;
 
-import java.util.Optional;
-
-
 public final class LoginUseCase {
     private final UserRepository userRepository;
     private final PasswordEncoderGateway passwordEncoder;
@@ -25,26 +22,21 @@ public final class LoginUseCase {
     }
 
     public Result<TokenResponse> execute(LoginRequest request) {
-        Notification notification = new Notification();
-        Email email = Email.restore(request.email());
-        Password password = Password.restore(request.password());
+        var notification = new Notification();
+        var email = Email.restore(request.email());
+        var password = Password.restore(request.password());
 
-        Optional<UserDomain> userOps = userRepository.findByEmail(email);
-
-        if (userOps.isEmpty()) {
-            notification.addError("Usuario nao existe! Crie uma conta");
-            return Result.failure(notification);
-        }
-
-        UserDomain user = userOps.get();
-
-        if (!passwordEncoder.matches(password.getValue(), user.getPassword().getValue())) {
-            notification.addError("Email ou senha incorretos!");
-            return Result.failure(notification);
-        }
-
-        return issueTokenUseCase.execute(user);
+        return userRepository.findByEmail(email)
+                .<Result<TokenResponse>>map(user -> validateCredentials(user, password, notification))
+                .orElseGet(() -> {
+                    notification.addError("credentials", "Usuario nao existe! Crie uma conta");
+                    return Result.failure(notification);
+                });
     }
 
-
+    private Result<TokenResponse> validateCredentials(UserDomain user, Password password, Notification notification) {
+        return passwordEncoder.matches(password.getValue(), user.getPassword().getValue())
+                ? issueTokenUseCase.execute(user)
+                : Result.failure(notification.addError("credentials", "Email ou senha incorretos!"));
+    }
 }

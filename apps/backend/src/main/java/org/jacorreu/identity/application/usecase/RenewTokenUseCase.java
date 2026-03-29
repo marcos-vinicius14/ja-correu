@@ -1,6 +1,5 @@
 package org.jacorreu.identity.application.usecase;
 
-import jakarta.persistence.EntityNotFoundException;
 import org.jacorreu.identity.core.domain.RefreshTokenDomain;
 import org.jacorreu.identity.core.gateway.RefreshTokenRepository;
 import org.jacorreu.identity.application.dto.response.TokenResponse;
@@ -11,13 +10,10 @@ import org.jacorreu.user.core.gateway.UserRepository;
 
 import java.util.UUID;
 
-
 public final class RenewTokenUseCase {
     private final RefreshTokenRepository repository;
     private final UserRepository userRepository;
     private final IssueTokenUseCase issueTokenUseCase;
-
-
 
     public RenewTokenUseCase(
             RefreshTokenRepository repository,
@@ -29,21 +25,32 @@ public final class RenewTokenUseCase {
     }
 
     public Result<TokenResponse> execute(UUID token) {
-        Notification notification = new Notification();
-        RefreshTokenDomain tokenDomain = repository.findByTokenId(token).orElseThrow(() -> new EntityNotFoundException("Token nao encontrado"));
+        var notification = new Notification();
 
-        if (!tokenDomain.isValid()) {
-            notification.addError("Token invalido!");
-            return Result.failure(notification);
-        }
-
-        repository.revoke(token);
-
-        UserDomain user = userRepository.findById(tokenDomain.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("Usuario nao encontrado"));
-
-
-        return issueTokenUseCase.execute(user);
+        return repository.findByTokenId(token)
+                .<Result<TokenResponse>>map(t -> validateAndRenewToken(t, notification))
+                .orElseGet(() -> {
+                    notification.addError("token", "Token nao encontrado");
+                    return Result.failure(notification);
+                });
     }
 
+    private Result<TokenResponse> validateAndRenewToken(RefreshTokenDomain tokenDomain, Notification notification) {
+        if (!tokenDomain.isValid()) {
+            notification.addError("token", "Token invalido!");
+            return Result.failure(notification);
+        }
+        repository.revoke(tokenDomain.getTokenId());
+        return renewUserToken(tokenDomain.getUserId());
+    }
+
+    private Result<TokenResponse> renewUserToken(UUID userId) {
+        return userRepository.findById(userId)
+                .<Result<TokenResponse>>map(issueTokenUseCase::execute)
+                .orElseGet(() -> {
+                    var notification = new Notification();
+                    notification.addError("user", "Usuario nao encontrado");
+                    return Result.failure(notification);
+                });
+    }
 }

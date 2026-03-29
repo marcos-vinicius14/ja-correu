@@ -9,7 +9,6 @@ import org.jacorreu.user.core.domain.valueobjects.Email;
 import org.jacorreu.user.core.domain.valueobjects.Password;
 import org.jacorreu.user.core.gateway.UserRepository;
 
-
 public final class CreateUserUseCase {
     private final UserRepository userRepository;
     private final PasswordEncoderGateway passwordEncoder;
@@ -20,18 +19,19 @@ public final class CreateUserUseCase {
     }
 
     public Result<Void> execute(CreateUserRequest request) {
-        Notification notification = new Notification();
-        Email email = Email.restore(request.email());
-        Password password = Password.restore(request.password());
+        var notification = new Notification();
+        var email = Email.restore(request.email());
+        var password = Password.restore(request.password());
 
-        if (userRepository.existsByEmail(email)) {
-            notification.addError("Usuario ja existente! Realize o login!");
-            return Result.failure(notification);
-        }
+        return userRepository.existsByEmail(email)
+                ? Result.failure(notification.addError("email", "Usuario ja existente! Realize o login!"))
+                : createUser(request, email, password);
+    }
 
-        String encodedPassword = passwordEncoder.encode(password.getValue());
+    private Result<Void> createUser(CreateUserRequest request, Email email, Password password) {
+        var encodedPassword = passwordEncoder.encode(password.getValue());
 
-        UserDomain newUser = UserDomain.create(
+        var newUser = UserDomain.create(
                 request.username(),
                 email,
                 Password.restore(encodedPassword)
@@ -41,5 +41,4 @@ public final class CreateUserUseCase {
 
         return Result.success();
     }
-
 }
