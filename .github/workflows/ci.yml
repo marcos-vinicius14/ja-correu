@@ -17,6 +17,10 @@ jobs:
     defaults:
       run:
         working-directory: ./apps/backend
+    services:
+      docker:
+        image: docker:24.0.5
+        options: --privileged
     steps:
       - uses: actions/checkout@v4
 
@@ -83,7 +87,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm run test -- --run --reporter=verbose
+        run: npx vitest run --reporter=verbose
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
