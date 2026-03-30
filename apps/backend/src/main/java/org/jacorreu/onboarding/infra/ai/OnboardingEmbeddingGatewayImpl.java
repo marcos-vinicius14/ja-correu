@@ -1,51 +1,57 @@
 package org.jacorreu.onboarding.infra.ai;
 
+import org.jacorreu.embedding.core.domain.EmbeddingType;
+import org.jacorreu.embedding.core.domain.valueobjects.EmbeddingContent;
+import org.jacorreu.embedding.core.domain.valueobjects.EmbeddingUserId;
+import org.jacorreu.embedding.core.gateway.EmbeddingGateway;
 import org.jacorreu.onboarding.core.domain.AthleteProfileDomain;
+import org.jacorreu.onboarding.core.domain.valueobjects.Goal;
 import org.jacorreu.onboarding.core.gateway.OnboardingEmbeddingGateway;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class OnboardingEmbeddingGatewayImpl implements OnboardingEmbeddingGateway {
 
-    private final VectorStore vectorStore;
+    private final EmbeddingGateway embeddingGateway;
 
-    public OnboardingEmbeddingGatewayImpl(VectorStore vectorStore) {
-        this.vectorStore = vectorStore;
+    public OnboardingEmbeddingGatewayImpl(EmbeddingGateway embeddingGateway) {
+        this.embeddingGateway = embeddingGateway;
     }
 
     @Override
     public void generateOnboardingEmbedding(AthleteProfileDomain profile) {
-        String content = buildProfileText(profile);
-
-        Document document = new Document(
-                content,
-                Map.of(
-                        "userId", profile.getUserId().toString(),
-                        "goal", profile.getGoal().name(),
-                        "level", profile.getLevel().name(),
-                        "currentPacePerKm", profile.getCurrentPacePerKm().toFormattedString(),
-                        "availableDaysPerWeek", String.valueOf(profile.getAvailableDaysPerWeek().getValue())
-                )
-        );
-
-        vectorStore.add(List.of(document));
+        String content = buildContextText(profile);
+        var userId = EmbeddingUserId.restore(profile.getUserId());
+        var embeddingContent = EmbeddingContent.restore(content);
+        embeddingGateway.save(userId, EmbeddingType.ONBOARDING, embeddingContent);
     }
 
-    private String buildProfileText(AthleteProfileDomain profile) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Atleta com objetivo de correr ").append(profile.getGoal().targetDistanceKm()).append(" km. ");
-        sb.append("Nível: ").append(profile.getLevel().name()).append(". ");
-        sb.append("Volume máximo semanal recomendado: ").append(profile.getLevel().maxWeeklyVolumeKm()).append(" km. ");
-        sb.append("Disponibilidade: ").append(profile.getAvailableDaysPerWeek().getValue()).append(" dias por semana. ");
-        sb.append("Pace atual: ").append(profile.getCurrentPacePerKm().toFormattedString()).append(" min/km. ");
-        if (profile.getInjuriesNotes() != null && !profile.getInjuriesNotes().isBlank()) {
-            sb.append("Histórico de lesões: ").append(profile.getInjuriesNotes()).append(".");
-        }
-        return sb.toString();
+    private String buildContextText(AthleteProfileDomain profile) {
+        String injuries = profile.getInjuriesNotes() == null || profile.getInjuriesNotes().isBlank()
+                ? "nenhuma"
+                : profile.getInjuriesNotes();
+
+        return """
+                Atleta com objetivo de completar %s.
+                Nível de experiência: %s.
+                Disponibilidade de %d dias por semana para treinar.
+                Pace atual: %s por km.
+                Restrições e lesões: %s."""
+                .formatted(
+                        formatGoal(profile.getGoal()),
+                        profile.getLevel().name(),
+                        profile.getAvailableDaysPerWeek().getValue(),
+                        profile.getCurrentPacePerKm().toFormattedString(),
+                        injuries
+                );
+    }
+
+    private String formatGoal(Goal goal) {
+        return switch (goal) {
+            case FIVE_K -> "5km";
+            case TEN_K -> "10km";
+            case HALF_MARATHON -> "21.097km (meia maratona)";
+            case MARATHON -> "42.195km (maratona)";
+        };
     }
 }

@@ -1,7 +1,7 @@
 package org.jacorreu.embedding.application.dto;
 
-import org.springframework.ai.document.Document;
+import org.jacorreu.embedding.core.domain.EmbeddingSearchResult;
 
 import java.util.List;
 
-public record EmbeddingResult(List<Document> documents) {}
+public record EmbeddingResult(List<EmbeddingSearchResult> results) {}

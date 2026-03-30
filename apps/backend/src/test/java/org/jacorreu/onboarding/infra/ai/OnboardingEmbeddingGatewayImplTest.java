@@ -9,8 +9,6 @@ import org.jacorreu.onboarding.core.domain.valueobjects.AvailableDaysPerWeek;
 import org.jacorreu.onboarding.core.domain.valueobjects.CurrentPacePerKm;
 import org.jacorreu.onboarding.core.domain.valueobjects.Goal;
 import org.jacorreu.onboarding.core.domain.valueobjects.Level;
-import org.jacorreu.shared.validation.Result;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -31,11 +29,6 @@ class OnboardingEmbeddingGatewayImplTest {
 
     @InjectMocks
     private OnboardingEmbeddingGatewayImpl onboardingGateway;
-
-    @BeforeEach
-    void setUp() {
-        when(embeddingGateway.save(any(), any(), any())).thenReturn(Result.success());
-    }
 
     @Test
     void should_generateCorrectContextText_whenProfileProvided() {
