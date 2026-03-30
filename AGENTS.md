@@ -685,3 +685,202 @@ public class OutboxEventPublisher implements EventPublisher { ... }
 - Easy de trocar implementação (ex: Kafka, RabbitMQ, etc)
 - Use cases são mais testáveis (mock fácil)
 -遵守 Hexagonal Architecture entre módulos
+
+## Testing Strategy: Test Trophy
+
+Este projeto segue a abordagem **Test Trophy** (Troféu de Testes), priorizando testes de integração sobre testes unitários com mocks.
+
+### Test Trophy vs Pyramid
+
+```
+PYRAMID (Evitar):           TROPHY (Usar):
+      /\                         /\
+     /  \  E2E (10%)             /  \  E2E (fluxos críticos)
+    /____\                      /____\  
+   /      \  Integration      /      \  Integration (MAIORIA - 60%)
+  /________\  (30%)          /________\
+ /          \  Unit          /          \ Unit + Static (30%)
+/____________\ (60%)        /____________\
+```
+
+### Distribuição de Testes
+
+| Tipo | Propósito | Exemplo | Quantidade |
+|------|-----------|---------|------------|
+| **Static** | Qualidade de código | Spotless, Checkstyle | Infinito (CI) |
+| **Unit** | Lógica pura, sem I/O | EmbeddingType enum, validações | ~20% |
+| **Integration** | Componentes + PostgreSQL/PGVector | EmbeddingServiceIT, HandlerIT | ~60% ⭐ |
+| **E2E** | Fluxos críticos do usuário | Onboarding completo | ~20% |
+
+### Por que Test Trophy?
+
+**Vantagens para este projeto:**
+- **PGVector real**: Testa HNSW index, similarity search, constraints
+- **Confiança**: Sabe que funciona, não apenas que o mock foi chamado
+- **Manutenção**: Testes reais são mais robustos que mocks que quebram
+- **Documentação**: Mostra comportamento real do sistema
+
+### Regras de Testes
+
+#### 1. TestContainers Obrigatório para Integração
+
+Use PostgreSQL com PGVector em todos os testes de integração:
+
+```java
+@Testcontainers
+class EmbeddingServiceIT {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+        DockerImageName.parse("pgvector/pgvector:pg16")
+    );
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+    }
+    
+    // Testa com banco real, não mocks
+}
+```
+
+#### 2. Nomenclatura de Testes
+
+Use padrão `should_<comportamento>_when_<condição>`:
+
+```java
+@Test
+void should_saveDocumentWithMetadata_whenValidInput() { }
+
+@Test
+void should_throwException_whenUserIdIsNull() { }
+```
+
+#### 3. Estrutura dos Testes (Arrange-Act-Assert)
+
+```java
+@Test
+void should_persistEmbedding_whenSaveCalled() {
+    // Arrange
+    UUID userId = Generators.timeBasedEpochGenerator().generate();
+    String content = "Atleta objetivo 42km";
+    
+    // Act
+    embeddingGateway.save(userId, EmbeddingType.ONBOARDING, content);
+    
+    // Assert - Verifica no banco real
+    Map<String, Object> result = jdbcTemplate.queryForMap(
+        "SELECT * FROM athlete_embedding WHERE user_id = ?::uuid",
+        userId.toString()
+    );
+    assertEquals(content, result.get("content"));
+}
+```
+
+#### 4. Evite Mocks Desnecessários
+
+**NÃO mockar:**
+- `VectorStore` → Use PGVector real
+- `JdbcTemplate` → Use INSERTs reais  
+- `Repository` → Use `@Autowired` com TestContainers
+
+**Mockar apenas:**
+- Serviços externos (OpenAI em CI)
+- Clock/Time para testes determinísticos
+- Interfaces de outros módulos (ports)
+
+#### 5. Testes de Banco de Dados
+
+Sempre verifique no banco após operações:
+
+```java
+// Após salvar embedding
+List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+    "SELECT type, content FROM athlete_embedding WHERE user_id = ?",
+    userId
+);
+assertEquals(1, rows.size());
+assertEquals("ONBOARDING", rows.get(0).get("type"));
+```
+
+### Configuração TestContainers
+
+#### pom.xml
+
+```xml
+<properties>
+    <testcontainers.version>1.19.8</testcontainers.version>
+</properties>
+
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-bom</artifactId>
+            <version>${testcontainers.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<dependencies>
+    <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>postgresql</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+```
+
+#### application-test.yml
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:16:///test_db?TC_IMAGE_TAG=pgvector/pgvector:pg16
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+```
+
+### Execução de Testes
+
+```bash
+# Todos os testes (inclui TestContainers)
+./mvnw test
+
+# Apenas testes de integração
+./mvnw test -Dtest="*IT"
+
+# Teste específico
+./mvnw test -Dtest=EmbeddingServiceIT
+
+# TDD workflow
+./mvnw test -Dtest=NomeClasseTest#nomeMetodo
+```
+
+### Docker Requerido
+
+TestContainers requer Docker em execução. No CI/CD (GitHub Actions):
+
+```yaml
+- name: Setup Docker
+  uses: docker/setup-buildx-action@v3
+
+- name: Run Tests
+  run: ./mvnw test
+```
+
+### Cobertura Mínima
+
+- **Unit + Integration**: ≥ 80% cobertura de linhas
+- **E2E**: Todos os fluxos críticos do usuário
+- **Static**: 100% conformidade com Spotless
