@@ -1,5 +1,6 @@
 package org.jacorreu.onboarding.infra.handler;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.jacorreu.onboarding.core.domain.AthleteProfileDomain;
 import org.jacorreu.onboarding.core.gateway.AthleteProfileRepository;
 import org.jacorreu.onboarding.core.gateway.OnboardingEmbeddingGateway;
@@ -30,16 +31,20 @@ public class OnboardingEventHandler {
     }
 
     public void handle(OutboxEvent event) {
-        var profileId = UUID.fromString(event.payload());
+        UUID profileId = UUID.fromString(event.payload());
 
-        athleteProfileRepository.findById(profileId)
-                .filter(p -> !p.isEmbeddingGenerated())
-                .ifPresentOrElse(
-                        profile -> {
-                            embeddingGateway.generateOnboardingEmbedding(profile);
-                            athleteProfileRepository.markEmbeddingGenerated(profileId);
-                        },
-                        () -> log.info("Embedding already generated or profile not found for id: {}", profileId)
-                );
+        log.info("Processing onboarding completion event for profile: {}", profileId);
+
+        try {
+            AthleteProfileDomain profile = athleteProfileRepository.findById(profileId)
+                    .orElseThrow(() -> new EntityNotFoundException("Athlete profile not found: " + profileId));
+
+            embeddingGateway.generateOnboardingEmbedding(profile);
+
+            log.info("Successfully generated onboarding embedding for profile: {}", profileId);
+        } catch (Exception e) {
+            log.error("Failed to generate onboarding embedding for profile: {}", profileId, e);
+            throw e;
+        }
     }
 }
