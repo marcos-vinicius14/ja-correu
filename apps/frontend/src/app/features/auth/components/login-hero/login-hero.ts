@@ -5,4 +5,4 @@ import { Component } from '@angular/core';
   templateUrl: './login-hero.html',
   styleUrl: './login-hero.scss',
 })
-export class LoginHero { }
+export class LoginHero {}

@@ -9,4 +9,4 @@ import { LoginHero } from '../../components/login-hero/login-hero';
   templateUrl: './login-page.html',
   styleUrl: './login-page.scss',
 })
-export class LoginPage { }
+export class LoginPage {}

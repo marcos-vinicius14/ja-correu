@@ -20,18 +20,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(credentialedReq).pipe(
     catchError((error: unknown) => {
-      const isUnauthorized =
-        error instanceof HttpErrorResponse && error.status === 401;
-      const isExcludedUrl = AUTH_URLS.some((url) =>
-        credentialedReq.url.includes(url)
-      );
+      const isUnauthorized = error instanceof HttpErrorResponse && error.status === 401;
+      const isExcludedUrl = AUTH_URLS.some((url) => credentialedReq.url.includes(url));
 
       if (!isUnauthorized || isExcludedUrl) {
         return throwError(() => error);
       }
 
       return handleRefresh(credentialedReq, next, authService, router);
-    })
+    }),
   );
 };
 
@@ -42,7 +39,7 @@ const handleRefresh: (
     return isRefreshing$.pipe(
       filter((refreshing) => !refreshing),
       take(1),
-      switchMap(() => next(req))
+      switchMap(() => next(req)),
     );
   }
 
@@ -58,6 +55,6 @@ const handleRefresh: (
       authService.clearAuthentication();
       router.navigate(['/login']);
       return throwError(() => refreshError);
-    })
+    }),
   );
 };

@@ -13,9 +13,7 @@ import { AuthService } from '../../services/auth.service';
 
 type ActiveTab = 'login' | 'register';
 
-const passwordMatchValidator: ValidatorFn = (
-  group: AbstractControl
-): ValidationErrors | null => {
+const passwordMatchValidator: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
   const password = group.get('password')?.value;
   const confirm = group.get('confirmPassword')?.value;
   return password === confirm ? null : { passwordMismatch: true };
@@ -39,7 +37,7 @@ export class LoginForm {
   readonly registerSuccess = signal(false);
 
   readonly greeting = computed(() =>
-    this.activeTab() === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta'
+    this.activeTab() === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta',
   );
 
   readonly loginForm = new FormGroup({
@@ -57,11 +55,7 @@ export class LoginForm {
     {
       username: new FormControl('', {
         nonNullable: true,
-        validators: [
-          Validators.required,
-          Validators.minLength(3),
-          Validators.maxLength(30),
-        ],
+        validators: [Validators.required, Validators.minLength(3), Validators.maxLength(30)],
       }),
       email: new FormControl('', {
         nonNullable: true,
@@ -76,7 +70,7 @@ export class LoginForm {
         validators: [Validators.required],
       }),
     },
-    { validators: passwordMatchValidator }
+    { validators: passwordMatchValidator },
   );
 
   setTab(tab: ActiveTab): void {

@@ -4,7 +4,7 @@
   height: 100%;
   align-items: center;
   justify-content: center;
-  background-color: #F0EDE8;
+  background-color: #f0ede8;
   padding: 48px;
 
   // Tablet
@@ -48,7 +48,12 @@
     font-weight: 700;
     letter-spacing: -1px;
     line-height: 1;
-    background: linear-gradient(90deg, var(--color-orange) 0%, #FF8C00 40%, var(--color-green) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--color-orange) 0%,
+      #ff8c00 40%,
+      var(--color-green) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -156,7 +161,7 @@
 
   &__error-msg {
     font-size: 13px;
-    color: #EF4444;
+    color: #ef4444;
     text-align: center;
     margin-top: -8px;
   }
@@ -176,17 +181,17 @@
     gap: 10px;
     padding: 16px;
     border-radius: 8px;
-    background-color: #F0FDF4;
-    border: 1px solid #BBF7D0;
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
     font-size: 14px;
     font-weight: 500;
-    color: #16A34A;
+    color: #16a34a;
     letter-spacing: -0.3px;
     line-height: 20px;
 
     svg {
       flex-shrink: 0;
-      color: #16A34A;
+      color: #16a34a;
     }
   }
 
@@ -235,7 +240,9 @@
     line-height: 20px;
     letter-spacing: -0.5px;
     outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
 
     &::placeholder {
       color: var(--color-muted);
@@ -247,7 +254,7 @@
     }
 
     &--error {
-      border-color: #EF4444;
+      border-color: #ef4444;
 
       &:focus {
         box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
@@ -283,7 +290,7 @@
 
   &__error {
     font-size: 12px;
-    color: #EF4444;
+    color: #ef4444;
     letter-spacing: -0.3px;
   }
 }
@@ -320,8 +327,8 @@
   }
 
   &--strava {
-    background-color: #1C2B3A;
-    color: #FFFFFF;
+    background-color: #1c2b3a;
+    color: #ffffff;
     border: none;
 
     &:hover:not(:disabled) {

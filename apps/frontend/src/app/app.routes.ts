@@ -10,17 +10,14 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () =>
-      import('./features/auth/pages/login-page/login-page').then(
-        (m) => m.LoginPage
-      ),
+      import('./features/auth/pages/login-page/login-page').then((m) => m.LoginPage),
   },
   {
     path: 'dashboard',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/dashboard/pages/dashboard-page/dashboard-page').then(
-        (m) => m.DashboardPage
+        (m) => m.DashboardPage,
       ),
   },
 ];
-

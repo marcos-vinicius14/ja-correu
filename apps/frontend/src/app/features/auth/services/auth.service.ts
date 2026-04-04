@@ -20,7 +20,7 @@ export class AuthService {
       catchError(() => {
         this.#authenticated.set(false);
         return of(false);
-      })
+      }),
     );
   }
 
