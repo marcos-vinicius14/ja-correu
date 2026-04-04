@@ -50,7 +50,7 @@ public class OnboardingController {
         var result = getAthleteProfileUseCase.execute(id);
 
         return result.isSuccess()
-                ? okHalResponse(OnboardingResponse.from(result.getData()), result.getData().id())
+                ? okHalResponse(OnboardibngResponse.from(result.getData()), result.getData().id())
                 : notFoundResponse(id);
     }
 
@@ -106,17 +106,16 @@ public class OnboardingController {
 
     private HttpStatus resolveStatus(Result<AthleteProfileResult> result) {
         return result.getNotification().getErrors().stream()
-                        .anyMatch(e -> "already_active".equals(e.field()))
-                ? HttpStatus.CONFLICT
-                : HttpStatus.UNPROCESSABLE_ENTITY;
+                .anyMatch(e -> "already_active".equals(e.field()))
+                        ? HttpStatus.CONFLICT
+                        : HttpStatus.UNPROCESSABLE_ENTITY;
     }
 
     private ProblemDetail buildProblemDetail(
             HttpStatus status, Result<AthleteProfileResult> result, String instance) {
-        var detail =
-                result.getNotification().getErrors().isEmpty()
-                        ? "Erro de validacao"
-                        : result.getNotification().getErrors().getFirst().message();
+        var detail = result.getNotification().getErrors().isEmpty()
+                ? "Erro de validacao"
+                : result.getNotification().getErrors().getFirst().message();
         var pd = ProblemDetail.forStatusAndDetail(status, detail);
         pd.setTitle(status == HttpStatus.CONFLICT ? "Conflito" : "Erro de validacao");
         pd.setType(URI.create(ERROR_TYPE_BASE + status.name().toLowerCase()));
@@ -130,9 +129,8 @@ public class OnboardingController {
     }
 
     private ResponseEntity<ProblemDetail> unauthorizedResponse() {
-        var pd =
-                ProblemDetail.forStatusAndDetail(
-                        HttpStatus.UNAUTHORIZED, "Token invalido ou expirado");
+        var pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED, "Token invalido ou expirado");
         pd.setTitle("Nao autorizado");
         pd.setType(URI.create(ERROR_TYPE_BASE + "unauthorized"));
         pd.setInstance(URI.create("/api/v1/onboarding"));
@@ -140,9 +138,8 @@ public class OnboardingController {
     }
 
     private ResponseEntity<ProblemDetail> notFoundResponse(UUID id) {
-        var pd =
-                ProblemDetail.forStatusAndDetail(
-                        HttpStatus.NOT_FOUND, "Perfil de atleta nao encontrado");
+        var pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, "Perfil de atleta nao encontrado");
         pd.setTitle("Recurso nao encontrado");
         pd.setType(URI.create(ERROR_TYPE_BASE + "not_found"));
         pd.setInstance(URI.create("/api/v1/onboarding/" + id));
