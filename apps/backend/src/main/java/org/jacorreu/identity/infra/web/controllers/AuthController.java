@@ -7,20 +7,25 @@ import org.jacorreu.identity.application.usecase.CreateUserUseCase;
 import org.jacorreu.identity.application.usecase.LoginUseCase;
 import org.jacorreu.identity.application.usecase.LogoutUseCase;
 import org.jacorreu.identity.application.usecase.RenewTokenUseCase;
-import org.jacorreu.identity.infra.web.dto.ErrorResponse;
+import org.jacorreu.identity.infra.web.dto.AuthTokenResponse;
 import org.jacorreu.shared.validation.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.time.Duration;
-import java.util.Map;
 import java.util.UUID;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -44,61 +49,85 @@ public class AuthController {
         this.createUserUseCase = createUserUseCase;
     }
 
-
-    @PostMapping("/register")
+    @PostMapping(value = "/register", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<?> create(@RequestBody CreateUserRequest request) {
         Result<Void> result = createUserUseCase.execute(request);
 
         if (!result.isSuccess()) {
-            return errorResponse(HttpStatus.BAD_REQUEST, "Erro ao criar usuário", result, "Verifique se os dados estão corretos e tente novamente");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(problemDetail(HttpStatus.BAD_REQUEST, "Erro ao criar usuario",
+                            result, "/api/v1/auth/register"));
         }
 
-        return ResponseEntity.status(201).build();
+        var body = new AuthTokenResponse(null);
+        body.add(linkTo(methodOn(AuthController.class).login(null)).withRel("login"));
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .contentType(MediaTypes.HAL_JSON)
+                .body(body);
     }
 
-    @PostMapping("/login")
+    @PostMapping(value = "/login", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         Result<TokenResponse> result = loginUseCase.execute(request);
 
-        log.debug("Login endpoint chamado para email: {}", request.email());
-        log.debug("Login endpoint chamado");
+        log.debug("Login endpoint chamado para email: {}", request == null ? null : request.email());
 
-        log.debug("Login result success: {}", result.isSuccess());
         if (!result.isSuccess()) {
             log.debug("Login errors: {}", result.getNotification().getErrors());
-
-            return errorResponse(HttpStatus.UNAUTHORIZED, "Erro ao realizar login", result, "Verifique se os dados estão corretos e tente novamente");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(problemDetail(HttpStatus.UNAUTHORIZED, "Erro ao realizar login",
+                            result, "/api/v1/auth/login"));
         }
 
+        var body = new AuthTokenResponse(result.getData().accessToken());
+        body.add(linkTo(methodOn(AuthController.class).login(null)).withSelfRel());
+        body.add(linkTo(methodOn(AuthController.class).logout()).withRel("logout"));
+        body.add(linkTo(methodOn(AuthController.class).refresh(null)).withRel("refresh"));
+
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(result.getData().refreshToken(), REFRESH_TOKEN_TTL).toString())
-                .body(Map.of("accessToken", result.getData().accessToken()));
+                .contentType(MediaTypes.HAL_JSON)
+                .header(HttpHeaders.SET_COOKIE,
+                        buildRefreshCookie(result.getData().refreshToken(), REFRESH_TOKEN_TTL).toString())
+                .body(body);
     }
 
-    @PostMapping("/logout")
+    @PostMapping(value = "/logout", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<?> logout() {
         var userId = (UUID) SecurityContextHolder.getContext()
                 .getAuthentication().getPrincipal();
 
         logoutUseCase.execute(userId);
 
+        var body = new AuthTokenResponse(null);
+        body.add(linkTo(methodOn(AuthController.class).login(null)).withRel("login"));
+
         return ResponseEntity.ok()
+                .contentType(MediaTypes.HAL_JSON)
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie("", Duration.ZERO).toString())
-                .build();
+                .body(body);
     }
 
-    @PostMapping("/refresh")
+    @PostMapping(value = "/refresh", produces = MediaTypes.HAL_JSON_VALUE)
     public ResponseEntity<?> refresh(@CookieValue("refresh_token") String refreshToken) {
         Result<TokenResponse> result = renewTokenUseCase.execute(UUID.fromString(refreshToken));
 
         if (!result.isSuccess()) {
-            log.debug("Login errors: {}", result.getNotification().getErrors());
-            return errorResponse(HttpStatus.UNAUTHORIZED, "Erro ao renovar credenciais", result, "Realize o login novamente");
+            log.debug("Refresh errors: {}", result.getNotification().getErrors());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(problemDetail(HttpStatus.UNAUTHORIZED, "Erro ao renovar credenciais",
+                            result, "/api/v1/auth/refresh"));
         }
 
+        var body = new AuthTokenResponse(result.getData().accessToken());
+        body.add(linkTo(methodOn(AuthController.class).refresh(null)).withSelfRel());
+        body.add(linkTo(methodOn(AuthController.class).logout()).withRel("logout"));
+
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(result.getData().refreshToken(), REFRESH_TOKEN_TTL).toString())
-                .body(Map.of("accessToken", result.getData().accessToken()));
+                .contentType(MediaTypes.HAL_JSON)
+                .header(HttpHeaders.SET_COOKIE,
+                        buildRefreshCookie(result.getData().refreshToken(), REFRESH_TOKEN_TTL).toString())
+                .body(body);
     }
 
     // ─── Helpers ─────────────────────────────────────────────
@@ -113,16 +142,14 @@ public class AuthController {
                 .build();
     }
 
-    private ResponseEntity<?> errorResponse(HttpStatus status, String title, Result<?> result, String hint) {
-        String detail = result.getNotification().getErrors().isEmpty()
+    private ProblemDetail problemDetail(HttpStatus status, String title, Result<?> result, String instance) {
+        var detail = result.getNotification().getErrors().isEmpty()
                 ? title
                 : result.getNotification().getErrors().getFirst().message();
-
-        return ResponseEntity.status(status).body(new ErrorResponse(title, detail, hint));
+        var pd = ProblemDetail.forStatusAndDetail(status, detail);
+        pd.setTitle(title);
+        pd.setType(URI.create("https://jacorreu.org/errors/" + status.name().toLowerCase()));
+        pd.setInstance(URI.create(instance));
+        return pd;
     }
-
-    private ResponseEntity<?> errorResponse(HttpStatus status, String title, String detail, String hint) {
-        return ResponseEntity.status(status).body(new ErrorResponse(title, detail, hint));
-    }
-
 }

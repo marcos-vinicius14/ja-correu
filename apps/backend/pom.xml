@@ -29,7 +29,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-ai.version>2.0.0-M2</spring-ai.version>
-        <testcontainers.version>1.19.8</testcontainers.version>
+        <testcontainers.version>1.20.6</testcontainers.version>
     </properties>
     <dependencies>
         <!-- Métricas -->
@@ -100,6 +100,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-hateoas</artifactId>
         </dependency>
 
         <dependency>

@@ -1,8 +1,9 @@
 spring:
   datasource:
-    url: jdbc:tc:postgresql:16:///test_db?TC_IMAGE_TAG=pgvector/pgvector:pg16
-    username: test
-    password: test
+    url: jdbc:postgresql://localhost:5432/jacorreu_db
+    driver-class-name: org.postgresql.Driver
+    username: marcos
+    password: corrida10
   jpa:
     hibernate:
       ddl-auto: none
@@ -10,9 +11,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   flyway:
-    enabled: true
-    locations: classpath:db/migration
+    enabled: false
   ai:
+    openai:
+      api-key: test-key
     vectorstore:
       pgvector:
         initialize-schema: false
+
+jwt:
+  secret: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
