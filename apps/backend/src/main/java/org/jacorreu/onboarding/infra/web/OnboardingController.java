@@ -50,7 +50,7 @@ public class OnboardingController {
         var result = getAthleteProfileUseCase.execute(id);
 
         return result.isSuccess()
-                ? okHalResponse(OnboardibngResponse.from(result.getData()), result.getData().id())
+                ? okHalResponse(OnboardingResponse.from(result.getData()), result.getData().id())
                 : notFoundResponse(id);
     }
 
