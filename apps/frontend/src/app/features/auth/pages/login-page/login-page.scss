@@ -1,0 +1,17 @@
+.login-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+
+  // Tablet (768px–1023px): empilha hero acima do form
+  @media (max-width: 1023px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  // Mobile (<768px): oculta o hero, apenas o form
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+}
